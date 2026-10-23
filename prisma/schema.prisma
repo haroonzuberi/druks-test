@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  REVIEWER
+  OWNER
+}
+
+enum Cuisine {
+  ITALIAN
+  CHINESE
+  INDIAN
+  MEXICAN
+  JAPANESE
+  THAI
+  FRENCH
+  AMERICAN
+  MEDITERRANEAN
+  OTHER
+}
+
+model User {
+  id  Int @id @default(autoincrement())
+  email String  @unique @db.VarChar(191)
+  passwordHash  String @db.VarChar(255)
+  name  String  @db.VarChar(100)
+  role  Role
+
+  // Saved Filters
+
+  cuisineFilter  Cuisine?
+  minRating Int? @db.TinyInt
+  maxRating Int? @db.TinyInt
+  cityFilter String? @db.VarChar(50)
+  sortOrder String? @db.VarChar(30)
+
+  restaurants Restaurant[]
+  reviews Review[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+}
+
+model Restaurant {
+  id  Int @id @default(autoincrement())
+  name  String  @db.VarChar(150)
+  description String @db.Text
+  location String @db.VarChar(255)
+  city String @db.VarChar(50)
+  cuisine Cuisine
+  image String? @db.VarChar(500)
+
+  website String? @db.VarChar(150)
+
+  owner User  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId Int
+
+  reviews Review[]
+
+  averageRating Float? @db.Float
+  reviewCount   Int    @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([ownerId])
+  @@index([cuisine])
+  @@index([city])
+  @@index([averageRating])  
+  
+}
+
+
+model Review {
+  id Int @id @default(autoincrement())
+  rating Int  @db.TinyInt
+  comment String? @db.Text
+
+  reviewerId  Int
+  author  User  @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  restaurant Restaurant @relation(fields:[restaurantId], references: [id], onDelete: Cascade)
+  restaurantId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([restaurantId, reviewerId])
+  @@index([restaurantId])
+}
+
